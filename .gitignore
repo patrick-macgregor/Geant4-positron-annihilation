@@ -67,3 +67,12 @@ vcpkg_installed/
 # test output & cache
 Testing/
 .cache/
+
+# STANDARD C++ GITIGNORE ENDS HERE
+################################################################################
+# files not needed
+bin/
+build/
+*.vim
+.DS_Store
+

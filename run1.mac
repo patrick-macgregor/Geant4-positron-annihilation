@@ -1,0 +1,8 @@
+# Change the default number of workers (in multi-threading mode)
+/run/numberOfThreads 8
+#
+# Initialize kernel
+/run/initialize
+
+/run/beamOn 1000000
+#/run/beamOn 100000000
