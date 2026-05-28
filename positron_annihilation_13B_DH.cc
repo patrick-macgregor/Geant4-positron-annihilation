@@ -9,13 +9,33 @@
 #include "G4UImanager.hh"
 #include "G4VisExecutive.hh"
 #include "G4VUserPhysicsList.hh"
+#include <G4UIcommandStatus.hh>
 
+void usage(){
+               ////////////////////////////////////////////////////////////
+    G4cout << "usage: positron_annihilation_13B_DH det_geom_macro.mac [run.mac]" << G4endl << G4endl;
+    G4cout << "ESSENTIAL:" << G4endl;
+    G4cout << "  det_geom_macro.mac  a macro file defining the properties" << G4endl;
+    G4cout << "                      of all detectors in the system. This" << G4endl;
+    G4cout << "                      program will crash if this full information" << G4endl;
+    G4cout << "                      is not supplied!" << G4endl;
+    G4cout << "OPTIONS: " << G4endl;
+    G4cout << "  [run.mac]  Specifies the running conditions. If not supplied," << G4endl;
+    G4cout << "             a visualiser window will open." << G4endl;
+}
 
+// USAGE: arg 1 = detector geometry
+//        arg 2 = macro file (optional)
 int main(int argc, char** argv)
 {
+    // If no detector geometry supplied - stop
+    if ( argc == 1 ){
+        usage();
+        return 0;
+    }
     // Detect interactive mode (if no arguments) and define UI session
     G4UIExecutive* ui = nullptr;
-    if (argc == 1){
+    if (argc == 2){
         ui = new G4UIExecutive(argc, argv);
     }
 
@@ -51,14 +71,20 @@ int main(int argc, char** argv)
     G4UImanager* ui_manager = G4UImanager::GetUIpointer();
 
     // Process detector geometry file
-    ui_manager->ApplyCommand("/control/execute detector_geometry.mac");
+    G4String execute_command = "/control/execute ";
+    G4String det_geom_file_name = argv[1];
+    G4int det_geom_state = ui_manager->ApplyCommand( execute_command + det_geom_file_name );
+
+    if ( det_geom_state != fCommandSucceeded ){
+        G4cout << "Could not initialise detector geometry. Exiting..." << G4endl;
+        return 1;
+    }
 
     // Process macro or start UI session
     if (!ui) {
         // batch mode
-        G4String command = "/control/execute ";
-        G4String file_name = argv[1];
-        ui_manager->ApplyCommand(command + file_name);
+        G4String file_name = argv[2];
+        ui_manager->ApplyCommand(execute_command + file_name);
     }
     else {
         // interactive mode

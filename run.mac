@@ -4,5 +4,5 @@
 # Initialize kernel
 /run/initialize
 
-/run/beamOn 1000000
-#/run/beamOn 100000000
+# Simulate 1e7 particles
+/run/beamOn 10000000

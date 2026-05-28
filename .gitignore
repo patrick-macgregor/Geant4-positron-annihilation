@@ -74,6 +74,8 @@ Testing/
 bin/
 build/
 macros/
+results/
 *.vim
 .DS_Store
+G4History.macro
 

@@ -1,3 +1,4 @@
+#include <G4Log.hh>
 #ifndef DETECTOR_CONSTRUCTION_HH
 #define DETECTOR_CONSTRUCTION_HH 1
 
@@ -90,7 +91,7 @@ namespace DETECTOR
             // Helper setters for derived classes
             inline void SetLogicalVolume( G4LogicalVolume* log_vol ){ m_logical_volume = log_vol; }
             inline void SetPhysicalVolume( G4VSolid* phys_vol ){ m_physical_volume = phys_vol; }
-            void SetColour( G4Colour colour );
+            void SetColour( G4Colour colour, G4LogicalVolume* log_vol = nullptr );
 
             // Members - access in derived classes as private members
             G4LogicalVolume* m_logical_volume;
@@ -132,9 +133,11 @@ namespace DETECTOR
         public:
             LaBrDetectorArray() = default;
             ~LaBrDetectorArray() = default;
-            static constexpr G4double RADIUS = 1*2.54*cm;
+            static constexpr G4double RADIUS = 1.075*2.54*cm;
             static constexpr G4double LENGTH = 3*2.54*cm;
-            static constexpr G4double SEPARATION = 1*mm;
+            static constexpr G4double SEPARATION = 1.65*2.54*cm - RADIUS;
+            static constexpr G4double FRAME_RADIUS = 6.2*0.5*2.54*cm;
+            static constexpr G4double FRAME_HALF_THICKNESS = 0.889*cm;
 
         private:
             void Construct( G4LogicalVolume* parent, const Config& config ) override;
@@ -146,8 +149,8 @@ namespace DETECTOR
         public:
             StopperPlate() = default;
             ~StopperPlate() = default;
-            static constexpr G4double INNER_RADIUS = 5.0*mm;
-            static constexpr G4double OUTER_RADIUS = 55.0*mm;
+            static constexpr G4double INNER_RADIUS = 0.0*mm;
+            static constexpr G4double OUTER_RADIUS = 6.2*0.5*2.54*cm;
 
         private:
             void Construct( G4LogicalVolume* parent, const Config& config ) override;

@@ -38,7 +38,7 @@ target_link_libraries(positron_annihilation_13B_DH PRIVATE ${Geant4_LIBRARIES})
 set(POSITRON_ANNIHILATION_SCRIPTS
     detector_geometry.mac
     init_vis.mac
-    run1.mac
+    run.mac
     vis.mac
 )
 

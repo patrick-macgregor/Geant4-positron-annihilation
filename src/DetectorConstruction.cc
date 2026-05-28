@@ -5,11 +5,13 @@
 #include "G4LogicalVolume.hh"
 #include "G4NistManager.hh"
 #include "G4PVPlacement.hh"
+#include "G4SubtractionSolid.hh"
 #include "G4Tubs.hh"
 #include "G4ThreeVector.hh"
 #include "G4Types.hh"
 #include "G4VisAttributes.hh"
 #include "Randomize.hh"
+#include <G4VPhysicalVolume.hh>
 
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -73,9 +75,10 @@ namespace DETECTOR
     ////////////////////////////////////////////////////////////////////////////
     ////////////////////////////////////////////////////////////////////////////
     ////////////////////////////////////////////////////////////////////////////
-    void Geometry::SetColour( G4Colour colour )
+    void Geometry::SetColour( G4Colour colour, G4LogicalVolume* log_vol )
     {
-        m_logical_volume->SetVisAttributes( new G4VisAttributes( colour ) );
+        if (!log_vol) log_vol = m_logical_volume;
+        log_vol->SetVisAttributes( new G4VisAttributes( colour ) );
         return;
     }
     ////////////////////////////////////////////////////////////////////////////
@@ -136,35 +139,59 @@ namespace DETECTOR
         // Set config
         m_config = config;
 
-        // Construct material
+        // Construct materials
         G4Element* element_La = G4NistManager::Instance()->FindOrBuildElement( 57 );
         G4Element* element_Br = G4NistManager::Instance()->FindOrBuildElement( 35 );
         G4Material* material_LaBr = new G4Material( "LaBr3", 5.06*g/cm3, 2, G4State::kStateSolid );
         material_LaBr->AddElement( element_La, 1 );
         material_LaBr->AddElement( element_Br, 3 );
 
-        // Construct physical and logical volumes
+        G4Material* mat_frame = G4NistManager::Instance()->FindOrBuildMaterial("G4_Al");
+        G4Material* mat_vacuum = G4NistManager::Instance()->FindOrBuildMaterial("G4_Galactic");
+
+        // Construct new mother volume and place in the world
+        G4VSolid* mother_solid = new G4Tubs( "LaBrArraySolid", 0, FRAME_RADIUS + 1*um, LENGTH*0.5 + 1*um, 0, 360*deg );
+        G4LogicalVolume* mother_logical_volume = new G4LogicalVolume( mother_solid, mat_vacuum, "LaBrArrayLogicalVolume" );
+        SetColour( G4Colour(0,0,1,0.0), mother_logical_volume );
+
+        // Construct physical and logical volumes for the LaBr's
         SetPhysicalVolume( new G4Tubs( "LaBr3Detector", 0.0, RADIUS, LENGTH*0.5, 0.0, 360.0*deg ) );
         SetLogicalVolume( new G4LogicalVolume( GetPhysicalVolume(), material_LaBr, "LaBr3Detector" ) );
 
+        // Construct solid plate
+        G4VSolid* frame_no_holes = new G4Tubs( "Frame", 0, FRAME_RADIUS, FRAME_HALF_THICKNESS, 0, 360*deg );
+        G4VSolid* hole = new G4Tubs( "Hole", 0, RADIUS + 1*um, 2*FRAME_HALF_THICKNESS, 0, 360*deg );
+
         // Place detectors
         G4double cos45 = std::sqrt( 2.0 )/2.0;
-        G4double sep = RADIUS*( std::sqrt(2.0) - 1 ) + SEPARATION;
 
         G4ThreeVector positions[4] = {
-            G4ThreeVector(  cos45*( RADIUS + sep ),  cos45*( RADIUS + sep ), 0.5*LENGTH + m_config.z ),
-            G4ThreeVector( -cos45*( RADIUS + sep ),  cos45*( RADIUS + sep ), 0.5*LENGTH + m_config.z ),
-            G4ThreeVector(  cos45*( RADIUS + sep ), -cos45*( RADIUS + sep ), 0.5*LENGTH + m_config.z ),
-            G4ThreeVector( -cos45*( RADIUS + sep ), -cos45*( RADIUS + sep ), 0.5*LENGTH + m_config.z ),
+            G4ThreeVector(  cos45*( RADIUS + SEPARATION ),  cos45*( RADIUS + SEPARATION ), 0 ),//.5*LENGTH ),//+ m_config.z ),
+            G4ThreeVector( -cos45*( RADIUS + SEPARATION ),  cos45*( RADIUS + SEPARATION ), 0 ),//.5,//.5*LENGTH ),//+ m_config.z ),
+            G4ThreeVector(  cos45*( RADIUS + SEPARATION ), -cos45*( RADIUS + SEPARATION ), 0 ),//.5,//.5*LENGTH ),//+ m_config.z ),
+            G4ThreeVector( -cos45*( RADIUS + SEPARATION ), -cos45*( RADIUS + SEPARATION ), 0 ),//.5,//.5*LENGTH ) //+ m_config.z ),
         };
 
         // Set colour
         SetColour( G4Colour( 0.3, 0.3, 1.0 ) );
 
+        G4VSolid* frame_with_holes = frame_no_holes;
+        for ( G4int i = 0; i < 4; i++ )
+        {
+            frame_with_holes = new G4SubtractionSolid( "FrameWithHoles", frame_with_holes, hole, nullptr, positions[i] );
+        }
+
+        G4LogicalVolume* frame_logical_volume = new G4LogicalVolume( frame_with_holes, mat_frame, "FrameLogicalVolume" );
+        SetColour( G4Colour( 1.0, 0.3, 0.3 ), frame_logical_volume );
+        new G4PVPlacement( 0, G4ThreeVector(0,0,-0.5*2.54*cm), frame_logical_volume, "LaBrFrame", mother_logical_volume, false, 0, true );
+
         for (G4int i = 0; i < 4; i++)
         {
-            new G4PVPlacement( 0, positions[i], GetLogicalVolume(), "LaBr3Detector", parent, false, i, true );
+            new G4PVPlacement( 0, positions[i], GetLogicalVolume(), "LaBr3Detector", mother_logical_volume, false, i, true );
         }
+
+        // Place mother volume into the world
+        new G4PVPlacement( nullptr, G4ThreeVector(0,0,0.5*(LENGTH + 1*um) + m_config.z), mother_logical_volume, "LaBrArrayPlacementVolume", parent, false, 0, true );
 
 
         return;
@@ -191,7 +218,7 @@ namespace DETECTOR
         SetColour( G4Colour( 1.0, 0.3, 0.3 ) );
 
         // Place in 3D space
-        new G4PVPlacement( 0, G4ThreeVector(0,0,m_config.z), GetLogicalVolume(), "StopperPlate", parent, false, 0, true );
+        new G4PVPlacement( 0, G4ThreeVector(0,0,m_config.z), GetLogicalVolume(), "StopperPlate", parent, false, 0, false );
         return;
     }
 
@@ -253,8 +280,8 @@ G4VPhysicalVolume* DetectorConstruction::Construct()
     G4cout << "RecoilE OK" << G4endl;
     DETECTOR::Geometry* qqq1_array_dE    = DETECTOR::Geometry::Create<DETECTOR::QQQ1Array>( m_world_logical_volume, GetConfig( "RecoilDE" ) );
     G4cout << "RecoilDE OK" << G4endl;
-    // DETECTOR::Geometry* stopper_plate    = DETECTOR::Geometry::Create<DETECTOR::StopperPlate>( m_world_logical_volume, GetConfig( "Stopper" ) );
-    // G4cout << "Stopper OK" << G4endl;
+    //DETECTOR::Geometry* stopper_plate    = DETECTOR::Geometry::Create<DETECTOR::StopperPlate>( m_world_logical_volume, GetConfig( "Stopper" ) );
+    G4cout << "Stopper OK" << G4endl;
 
     // Tell the code that we're measuring the energy deposited in the LaBr's
     m_scoring_volume = labr_array->GetLogicalVolume();

@@ -1,35 +1,8 @@
-//
-// ********************************************************************
-// * License and Disclaimer                                           *
-// *                                                                  *
-// * The  Geant4 software  is  copyright of the Copyright Holders  of *
-// * the Geant4 Collaboration.  It is provided  under  the terms  and *
-// * conditions of the Geant4 Software License,  included in the file *
-// * LICENSE and available at  http://cern.ch/geant4/license .  These *
-// * include a list of copyright holders.                             *
-// *                                                                  *
-// * Neither the authors of this software system, nor their employing *
-// * institutes,nor the agencies providing financial support for this *
-// * work  make  any representation or  warranty, express or implied, *
-// * regarding  this  software system or assume any liability for its *
-// * use.  Please see the license in the file  LICENSE  and URL above *
-// * for the full disclaimer and the limitation of liability.         *
-// *                                                                  *
-// * This  code  implementation is the result of  the  scientific and *
-// * technical work of the GEANT4 collaboration.                      *
-// * By using,  copying,  modifying or  distributing the software (or *
-// * any work based  on the software)  you  agree  to acknowledge its *
-// * use  in  resulting  scientific  publications,  and indicate your *
-// * acceptance of all terms of the Geant4 Software license.          *
-// ********************************************************************
-//
-/// \file RunAction.cc
-/// \brief Implementation of the B1::RunAction class
-
 #include "RunAction.hh"
 
 #include "DetectorConstruction.hh"
 #include "HistogramIDs.hh"
+#include "OutputFileMessenger.hh"
 #include "PrimaryGeneratorAction.hh"
 #include "Run.hh"
 
@@ -45,6 +18,10 @@
 ////////////////////////////////////////////////////////////////////////////////
 RunAction::RunAction()
 {
+    // Create output file messenger
+    m_output_file_messenger = new OutputFileMessenger( this );
+    m_output_file_name = "positron_annihilation_13B_DH_results";
+
     // Get analysis manager
     G4AnalysisManager* analysis_manager = G4AnalysisManager::Instance();
     analysis_manager->SetDefaultFileType("root");
@@ -76,7 +53,7 @@ void RunAction::BeginOfRunAction(const G4Run*)
     // Create output file and histograms
     G4AnalysisManager* analysis_manager = G4AnalysisManager::Instance();
     analysis_manager->Reset();
-    analysis_manager->OpenFile( "xiaobinsim_results" );
+    analysis_manager->OpenFile( m_output_file_name + ".root" );
 
     // inform the runManager to save random number seed
     G4RunManager::GetRunManager()->SetRandomNumberStore(false);
@@ -117,7 +94,7 @@ void RunAction::EndOfRunAction(const G4Run* run)
         // Print stats to console and to file
         myrun->PrintStats(G4cout);
         std::ofstream myfile;
-        myfile.open("sim_results.txt");
+        myfile.open( m_output_file_name + ".txt");
         if ( myfile.is_open() ){
             myrun->PrintStats(myfile);
             myfile.close();

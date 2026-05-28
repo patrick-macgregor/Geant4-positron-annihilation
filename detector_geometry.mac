@@ -4,8 +4,8 @@
 /det/setHalfThickness RecoilDE 250.0 um
 /det/setZ RecoilDE -1.0 cm
 
-/det/setHalfThickness Stopper 0.0 mm
-/det/setZ Stopper 0.5 cm
+/det/setHalfThickness Stopper 0.889 cm
+/det/setZ Stopper 3.0 cm
 
 /det/setHalfThickness LaBr 0.0 cm
 /det/setZ LaBr 0.5 cm
