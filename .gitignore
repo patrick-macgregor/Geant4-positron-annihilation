@@ -73,6 +73,7 @@ Testing/
 # files not needed
 bin/
 build/
+macros/
 *.vim
 .DS_Store
 
